@@ -1,16 +1,18 @@
 <div class="row">
     <div class="col-md-12">
-        <form action="{{url('ajout_place')}}" id="addPlace" method="post">
+        <form action="{{ url('/ajout_place') }}" id="addPlace" method="post">
             @csrf
-            <div class="row" >
+            <div class="row">
                 <div class="col-md-3">
-                    <input type="text" id="place" name="place">
+                    <input type="text" id="place" name="place" placeholder="Entrez une place">
                     <button type="submit" class="btn btn-primary">Valider</button>
                 </div>
             </div>
         </form>
+        <div id="error-message" class="alert alert-danger" style="display:none;"></div>
     </div>
 </div>
+
 
     <br>
 
@@ -33,34 +35,56 @@
 <script src="{{ asset('assets/js/jquery.js') }}"></script>
 <script>
     $(document).ready(function() {
-        var table = initDataTable('#produitTable',"{{route('getPlace')}}",[
-            {"data":"id"},
-            {"data":"place"}
-        ]);
-        $('#addPlace').on('submit',function(event) {
-            event.preventDefault(); // Empêche le rechargement de la page
+        loadPlaces();
 
-            // Efface les messages d'erreur existants
-            $('.error-message').text('');
+        $('#addPlace').on('submit', function(e) {
+            e.preventDefault();
 
             $.ajax({
+                url: '{{ url("/ajout_place") }}',
                 type: 'POST',
-                url: $(this).attr('action'), // URL de l'action du formulaire
-                data: $(this).serialize(), // Sérialise les données du formulaire
-                dataType: 'json',
+                data: $(this).serialize(),
                 success: function(response) {
-                    alert('Place ajouté avec succès.');
-                    $('#addPlace')[0].reset(); // Réinitialise le formulaire
-                    location.reload(null,false); // Recharge les données, mais vous pouvez supprimer si vous ne voulez pas
+                    if (response.status === 'success') {
+                        appendPlace(response.place);
+                        $('#place').val('');
+                    }
                 },
-                error: function(xhr, status, error) {
-                    var errors = xhr.responseJSON.errors; // Récupère les erreurs JSON
-                    $.each(errors, function(index, value) {
-                        // Affiche les erreurs sous les champs de formulaire correspondants
-                        $('#error_' + index).text(value[0]);
-                    });
+                error: function(xhr) {
+                    if (xhr.status === 400) {
+                        var errors = xhr.responseJSON.errors;
+                        var errorMessage = '';
+                        if (errors.place) {
+                            errorMessage += errors.place[0] + '<br>';
+                        }
+                        $('#error-message').html(errorMessage).show();
+                    }
                 }
             });
         });
+
+        function loadPlaces() {
+            $.ajax({
+                url: '{{ url("/get_places") }}',
+                type: 'GET',
+                success: function(data) {
+                    $('#table-body').empty();
+                    data.forEach(function(place) {
+                        appendPlace(place);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Tsa mety", error);
+                }
+            });
+        }
+
+        function appendPlace(place) {
+            var row = '<tr>' +
+                      '<td>' + place.id + '</td>' +
+                      '<td>' + place.name + '</td>' +
+                      '</tr>';
+            $('#table-body').append(row);
+        }
     });
-</script>
+    </script>

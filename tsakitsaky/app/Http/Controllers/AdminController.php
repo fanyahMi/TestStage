@@ -20,29 +20,33 @@ class AdminController extends Controller
         return view('admin.Acceuil');
     }
 
-    public function getPlace(){
-        $place = Place::all();
-        return response()->json(['data' => $place]);
-    }
-
-    public function addPlace(Request $request){
-        $rules = [
-            'place' => 'required|string|max:400',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
+    public function storePlace(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'place' => 'required|string|max:255',
+        ]);
 
         if ($validator->fails()) {
-            return redirect()->back()
-                        ->withErrors($validator)
-                        ->withInput();
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors(),
+            ], 400);
         }
 
         $place = new Place();
-        $place -> place = $request->input('place');
-        $place -> save();
+        $place->name = $request->input('place');
+        $place->save();
 
-        return response()->json(['success' => ' ajouté avec success']);
+        return response()->json([
+            'status' => 'success',
+            'place' => $place,
+        ]);
+    }
 
+    // Récupérer toutes les places pour les afficher
+    public function getPlaces()
+    {
+        $places = Place::all();
+        return response()->json($places);
     }
 }
