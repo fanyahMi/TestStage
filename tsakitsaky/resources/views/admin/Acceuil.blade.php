@@ -13,8 +13,7 @@
     </div>
 </div>
 
-
-    <br>
+<br>
 
 <div class="row">
     <div class="col-md-6">
@@ -23,7 +22,8 @@
                 <thead>
                     <tr>
                         <th>Nº</th>
-                        <th>place</th>
+                        <th>Place</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="table-body">
@@ -32,7 +32,35 @@
         </div>
     </div>
 </div>
-<script src="{{ asset('assets/js/jquery.js') }}"></script>
+
+
+<div class="modal fade" id="editPlaceModal" tabindex="-1" role="dialog" aria-labelledby="editPlaceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPlaceModalLabel">Modifier Place</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editPlaceForm">
+                    @csrf
+                    <input type="hidden" id="edit-place-id">
+                    <div class="form-group">
+                        <label for="edit-place">Place</label>
+                        <input type="text" id="edit-place" name="place" class="form-control" placeholder="Entrez une place">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 <script>
     $(document).ready(function() {
         loadPlaces();
@@ -47,7 +75,71 @@
                 success: function(response) {
                     if (response.status === 'success') {
                         appendPlace(response.place);
-                        $('#place').val('');
+                        $('#place').val(''); // Clear the input field
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 400) {
+                        var errors = xhr.responseJSON.errors;
+                        var errorMessage = '';
+                        if (errors.place) {
+                            errorMessage += errors.place[0] + '<br>';
+                        }
+                        $('#error-message').html(errorMessage).show();
+                    }
+                }
+            });
+        });
+
+        $(document).on('click', '.delete-btn', function() {
+            var id = $(this).data('id_place');
+
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette place ?')) {
+                $.ajax({
+                    url: '/supPlace/' + id,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            alert(response.message);
+                            loadPlaces(); // Recharge les données après suppression
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Erreur lors de la suppression : ", error);
+                    }
+                });
+            }
+        });
+
+        $(document).on('click', '.edit-btn', function() {
+            var id = $(this).data('id_place');
+            var place = $(this).data('place');
+
+            $('#edit-place-id').val(id);
+            $('#edit-place').val(place);
+            $('#editPlaceModal').modal('show'); // Ouvre le modal
+        });
+
+        $('#editPlaceForm').on('submit', function(e) {
+            e.preventDefault();
+
+            var id = $('#edit-place-id').val();
+            var place = $('#edit-place').val();
+
+            $.ajax({
+                url: '/updatePlace/' + id,
+                type: 'PUT',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    place: place
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('#editPlaceModal').modal('hide'); // Ferme le modal
+                        loadPlaces(); // Recharge les données
                     }
                 },
                 error: function(xhr) {
@@ -74,17 +166,20 @@
                     });
                 },
                 error: function(xhr, status, error) {
-                    console.error("Tsa mety", error);
+                    console.error("Error loading places:", error);
                 }
             });
         }
 
         function appendPlace(place) {
             var row = '<tr>' +
-                      '<td>' + place.id + '</td>' +
-                      '<td>' + place.name + '</td>' +
-                      '</tr>';
+                    '<td>' + place.id_place + '</td>' +  // Use place.id_place to get the ID
+                    '<td>' + place.place + '</td>' +
+                    '<td><button class="btn btn-danger btn-sm delete-btn" data-id_place="' + place.id_place + '">Supprimer</button></td>' +
+                    '<td><button class="btn btn-warning btn-sm edit-btn" data-id_place="' + place.id_place + '" data-place="' + place.place + '">Modifier</button></td>' +
+                    '</tr>';
             $('#table-body').append(row);
         }
     });
-    </script>
+
+</script>

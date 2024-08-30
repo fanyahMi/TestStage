@@ -16,7 +16,7 @@ class Place extends Model
 
     public $timestamps = false;
     protected $primaryKey = "id_place";
-    public $incrementing = false;
+    public $incrementing = true;
 
 
 }

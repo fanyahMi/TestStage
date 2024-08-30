@@ -42,6 +42,9 @@ Route::get('/chart-linePlusData', [ChartController::class, 'linePlusData']);
 Route::get('/', [AdminController::class, 'index'])->middleware('checkUserSession');
 Route::post('/ajout_place', [AdminController::class, 'storePlace'])->name('place.store');
 Route::get('/get_places', [AdminController::class, 'getPlaces'])->name('places.get');
+Route::delete('/supPlace/{id}', [AdminController::class, 'dropPlaces'])->name('supPlace');
+Route::put('/updatePlace/{id}', [AdminController::class, 'update'])->name('updatePlace');
+
 
 //Ticket
 Route::get('/windTicket', [TicketController::class, 'showWindTicket'])->middleware('checkUserSession');
